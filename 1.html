@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恋爱日记 | 我们的甜蜜旅程</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #555;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff9ac8 0%, #a3d9ff 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .user-name {
+            color: white;
+            font-weight: bold;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .date-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid #eee;
+        }
+        
+        .date-navigator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .date-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ff6b9c;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .date-btn {
+            background: rgba(255, 154, 200, 0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ff6b9c;
+            font-size: 1.2rem;
+        }
+        
+        .date-btn:hover {
+            background: rgba(255, 154, 200, 0.4);
+            transform: scale(1.1);
+        }
+        
+        .calendar-btn {
+            background: linear-gradient(135deg, #ff9ac8 0%, #a3d9ff 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .calendar-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .content {
+            display: flex;
+            min-height: 600px;
+        }
+        
+        .left-section, .right-section {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .left-section {
+            border-right: 1px solid #eee;
+            background: rgba(255, 240, 245, 0.5);
+        }
+        
+        .right-section {
+            background: rgba(230, 247, 255, 0.5);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            color: #ff6b9c;
+            font-size: 1.5rem;
+        }
+        
+        .right-section .section-title {
+            color: #4a9fff;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .daily-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border-left: 4px solid #ff9ac8;
+            position: relative;
+        }
+        
+        .right-section .daily-card {
+            border-left: 4px solid #4a9fff;
+        }
+        
+        .daily-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-time {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .card-content {
+            line-height: 1.6;
+        }
+        
+        .card-author {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        
+        .add-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px dashed #ff9ac8;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .right-section .add-card {
+            border-color: #4a9fff;
+        }
+        
+        .add-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-3px);
+        }
+        
+        .add-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #ff6b9c;
+        }
+        
+        .right-section .add-card i {
+            color: #4a9fff;
+        }
+        
+        .diary-section {
+            background: linear-gradient(135deg, #fff5f9 0%, #f0f9ff 100%);
+            padding: 30px;
+            border-top: 1px solid #eee;
+        }
+        
+        .diary-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #ff6b9c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .diary-title i {
+            margin: 0 15px;
+            font-size: 1.8rem;
+        }
+        
+        .diary-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #f0f0f0;
+            min-height: 300px;
+        }
+        
+        .diary-date {
+            text-align: right;
+            color: #888;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        .diary-text {
+            line-height: 1.8;
+            font-size: 1.1rem;
+            min-height: 200px;
+        }
+        
+        .edit-diary {
+            display: block;
+            width: 100%;
+            min-height: 250px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+        
+        .heart {
+            position: absolute;
+            color: rgba(255, 107, 156, 0.2);
+            font-size: 1.5rem;
+            z-index: 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #ff9ac8 0%, #a3d9ff 100%);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        /* 登录界面样式 */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .login-title {
+            color: #ff6b9c;
+            margin-bottom: 30px;
+        }
+        
+        .login-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .login-btn {
+            background: linear-gradient(135deg, #ff9ac8 0%, #a3d9ff 100%);
+            border: none;
+            padding: 15px;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-title {
+            margin-bottom: 20px;
+            color: #ff6b9c;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #ff9ac8 0%, #a3d9ff 100%);
+            color: white;
+        }
+        
+        /* 日历样式 */
+        .calendar-modal {
+            max-width: 400px;
+        }
+        
+        .calendar {
+            width: 100%;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .calendar-month {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ff6b9c;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        
+        .calendar-day {
+            text-align: center;
+            padding: 10px 5px;
+            font-weight: bold;
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .calendar-date {
+            text-align: center;
+            padding: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-date:hover {
+            background: rgba(255, 154, 200, 0.2);
+        }
+        
+        .calendar-date.active {
+            background: linear-gradient(135deg, #ff9ac8 0%, #a3d9ff 100%);
+            color: white;
+        }
+        
+        .calendar-date.has-data {
+            position: relative;
+        }
+        
+        .calendar-date.has-data::after {
+            content: "";
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            background: #ff6b9c;
+            border-radius: 50%;
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .left-section {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .date-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .daily-card, .diary-content {
+            animation: fadeIn 0.8s ease;
+        }
+        
+        /* 爱心动画 */
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+        
+        .floating-heart {
+            position: absolute;
+            color: #ff9ac8;
+            pointer-events: none;
+            animation: float 5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div id="loginPage" class="login-container">
+        <h2 class="login-title">恋爱日记</h2>
+        <p>请选择您的身份登录</p>
+        <div class="login-buttons">
+            <button class="login-btn" id="loginAsGirl">
+                <i class="fas fa-female"></i> 我是女孩
+            </button>
+            <button class="login-btn" id="loginAsBoy">
+                <i class="fas fa-male"></i> 我是男孩
+            </button>
+        </div>
+    </div>
+
+    <!-- 主应用界面 -->
+    <div id="app" class="container" style="display: none;">
+        <div class="header">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name" id="userName">用户</div>
+                <button class="logout-btn" id="logout">退出</button>
+            </div>
+            <h1>恋爱日记</h1>
+            <div class="subtitle">记录我们在一起的每一天</div>
+        </div>
+        
+        <div class="date-controls">
+            <div class="date-navigator">
+                <button class="date-btn" id="prevDate">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="date-display" id="currentDate">2023年10月11日</div>
+                <button class="date-btn" id="nextDate">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <button class="calendar-btn" id="openCalendar">
+                <i class="fas fa-calendar-alt"></i>
+                <span>选择日期</span>
+            </button>
+        </div>
+        
+        <div class="content">
+            <div class="left-section">
+                <div class="section-title">
+                    <i class="fas fa-female"></i>
+                    <h2>女孩的日常</h2>
+                </div>
+                
+                <div id="girl-daily-container">
+                    <!-- 女孩的日常卡片将通过JS动态生成 -->
+                </div>
+                
+                <div class="add-card" id="add-girl-daily">
+                    <i class="fas fa-plus-circle"></i>
+                    <p>添加日常分享</p>
+                </div>
+            </div>
+            
+            <div class="right-section">
+                <div class="section-title">
+                    <i class="fas fa-male"></i>
+                    <h2>男孩的日常</h2>
+                </div>
+                
+                <div id="boy-daily-container">
+                    <!-- 男孩的日常卡片将通过JS动态生成 -->
+                </div>
+                
+                <div class="add-card" id="add-boy-daily">
+                    <i class="fas fa-plus-circle"></i>
+                    <p>添加日常分享</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="diary-section">
+            <div class="diary-title">
+                <i class="fas fa-heart"></i>
+                <h2>今晚的日记</h2>
+                <i class="fas fa-heart"></i>
+            </div>
+            
+            <div class="diary-content">
+                <div class="diary-date" id="diaryDate">2023年10月11日 晚上 10:30</div>
+                <div class="diary-text" id="diaryText">
+                    <!-- 日记内容将通过JS动态生成 -->
+                </div>
+                <textarea class="edit-diary" id="editDiary" style="display: none;" placeholder="写下今天的日记..."></textarea>
+            </div>
+            
+            <div class="controls">
+                <button class="btn" id="editDiaryBtn">
+                    <i class="fas fa-edit"></i> 编辑日记
+                </button>
+                <button class="btn" id="saveDiaryBtn" style="display: none;">
+                    <i class="fas fa-save"></i> 保存日记
+                </button>
+                <button class="btn" id="cancelEditBtn" style="display: none;">
+                    <i class="fas fa-times"></i> 取消编辑
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>每一段爱情都值得被认真记录 • 我们的故事还在继续</p>
+        </div>
+    </div>
+
+    <!-- 添加日常的模态框 -->
+    <div class="modal" id="dailyModal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">添加日常分享</h3>
+            <div class="form-group">
+                <label for="dailyTitle">标题</label>
+                <input type="text" id="dailyTitle" class="form-control" placeholder="例如：早餐时光">
+            </div>
+            <div class="form-group">
+                <label for="dailyTime">时间</label>
+                <input type="text" id="dailyTime" class="form-control" placeholder="例如：上午 8:30">
+            </div>
+            <div class="form-group">
+                <label for="dailyContent">内容</label>
+                <textarea id="dailyContent" class="form-control" rows="4" placeholder="分享你的日常..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" id="cancelDaily">取消</button>
+                <button class="btn btn-save" id="saveDaily">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日历模态框 -->
+    <div class="modal" id="calendarModal">
+        <div class="modal-content calendar-modal">
+            <h3 class="modal-title">选择日期</h3>
+            <div class="calendar" id="calendar">
+                <!-- 日历内容将通过JS动态生成 -->
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" id="closeCalendar">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase配置 - 您需要替换为您的Firebase项目配置
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // 初始化Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 用户状态管理
+        let currentUser = null;
+        let currentUserRole = null;
+
+        // 数据存储和管理
+        class LoveDiary {
+            constructor() {
+                // 设置当前日期为今天
+                this.currentDate = new Date();
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.render();
+                this.createFloatingHearts();
+                setInterval(() => this.createFloatingHearts(), 3000);
+            }
+            
+            // 从Firestore加载数据
+            async loadData(date) {
+                const dateKey = this.formatDate(date);
+                const docRef = db.collection('diaries').doc(dateKey);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    return doc.data();
+                } else {
+                    return {
+                        girl: [],
+                        boy: [],
+                        diary: ""
+                    };
+                }
+            }
+            
+            // 保存数据到Firestore
+            async saveData(date, data) {
+                const dateKey = this.formatDate(date);
+                await db.collection('diaries').doc(dateKey).set(data, { merge: true });
+            }
+            
+            // 获取当前日期的数据
+            async getCurrentDateData() {
+                return await this.loadData(this.currentDate);
+            }
+            
+            // 格式化日期为YYYY-MM-DD
+            formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            
+            // 格式化日期显示
+            formatDateDisplay(date) {
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('zh-CN', options);
+            }
+            
+            // 设置事件监听器
+            setupEventListeners() {
+                // 日期导航
+                document.getElementById('prevDate').addEventListener('click', async () => {
+                    this.currentDate.setDate(this.currentDate.getDate() - 1);
+                    await this.render();
+                });
+                
+                document.getElementById('nextDate').addEventListener('click', async () => {
+                    this.currentDate.setDate(this.currentDate.getDate() + 1);
+                    await this.render();
+                });
+                
+                // 日历按钮
+                document.getElementById('openCalendar').addEventListener('click', () => {
+                    this.openCalendar();
+                });
+                
+                document.getElementById('closeCalendar').addEventListener('click', () => {
+                    this.closeCalendar();
+                });
+                
+                // 添加日常按钮
+                document.getElementById('add-girl-daily').addEventListener('click', () => {
+                    if (currentUserRole === 'girl') {
+                        this.openDailyModal('girl');
+                    } else {
+                        alert('只有女孩可以添加女孩的日常');
+                    }
+                });
+                
+                document.getElementById('add-boy-daily').addEventListener('click', () => {
+                    if (currentUserRole === 'boy') {
+                        this.openDailyModal('boy');
+                    } else {
+                        alert('只有男孩可以添加男孩的日常');
+                    }
+                });
+                
+                // 日记编辑按钮
+                document.getElementById('editDiaryBtn').addEventListener('click', () => {
+                    if (currentUserRole === 'boy') {
+                        this.editDiary();
+                    } else {
+                        alert('只有男孩可以编辑日记');
+                    }
+                });
+                
+                document.getElementById('saveDiaryBtn').addEventListener('click', async () => {
+                    await this.saveDiary();
+                });
+                
+                document.getElementById('cancelEditBtn').addEventListener('click', () => {
+                    this.cancelEditDiary();
+                });
+                
+                // 模态框按钮
+                document.getElementById('cancelDaily').addEventListener('click', () => {
+                    this.closeDailyModal();
+                });
+                
+                document.getElementById('saveDaily').addEventListener('click', async () => {
+                    await this.saveDaily();
+                });
+            }
+            
+            // 打开添加日常的模态框
+            openDailyModal(type) {
+                this.currentDailyType = type;
+                document.getElementById('modalTitle').textContent = 
+                    type === 'girl' ? '添加女孩的日常' : '添加男孩的日常';
+                document.getElementById('dailyTitle').value = '';
+                document.getElementById('dailyTime').value = '';
+                document.getElementById('dailyContent').value = '';
+                document.getElementById('dailyModal').style.display = 'flex';
+            }
+            
+            // 关闭添加日常的模态框
+            closeDailyModal() {
+                document.getElementById('dailyModal').style.display = 'none';
+            }
+            
+            // 保存日常
+            async saveDaily() {
+                const title = document.getElementById('dailyTitle').value.trim();
+                const time = document.getElementById('dailyTime').value.trim();
+                const content = document.getElementById('dailyContent').value.trim();
+                
+                if (!title || !time || !content) {
+                    alert('请填写所有字段');
+                    return;
+                }
+                
+                const dateData = await this.getCurrentDateData();
+                const newDaily = {
+                    title,
+                    time,
+                    content,
+                    author: currentUserRole === 'girl' ? '女孩' : '男孩',
+                    timestamp: new Date()
+                };
+                
+                dateData[this.currentDailyType].push(newDaily);
+                await this.saveData(this.currentDate, dateData);
+                await this.render();
+                this.closeDailyModal();
+            }
+            
+            // 编辑日记
+            async editDiary() {
+                const dateData = await this.getCurrentDateData();
+                document.getElementById('diaryText').style.display = 'none';
+                document.getElementById('editDiary').style.display = 'block';
+                document.getElementById('editDiary').value = dateData.diary || '';
+                
+                document.getElementById('editDiaryBtn').style.display = 'none';
+                document.getElementById('saveDiaryBtn').style.display = 'block';
+                document.getElementById('cancelEditBtn').style.display = 'block';
+            }
+            
+            // 保存日记
+            async saveDiary() {
+                const content = document.getElementById('editDiary').value.trim();
+                const dateData = await this.getCurrentDateData();
+                dateData.diary = content;
+                await this.saveData(this.currentDate, dateData);
+                
+                document.getElementById('diaryText').style.display = 'block';
+                document.getElementById('editDiary').style.display = 'none';
+                document.getElementById('editDiaryBtn').style.display = 'block';
+                document.getElementById('saveDiaryBtn').style.display = 'none';
+                document.getElementById('cancelEditBtn').style.display = 'none';
+                
+                await this.renderDiary();
+            }
+            
+            // 取消编辑日记
+            cancelEditDiary() {
+                document.getElementById('diaryText').style.display = 'block';
+                document.getElementById('editDiary').style.display = 'none';
+                document.getElementById('editDiaryBtn').style.display = 'block';
+                document.getElementById('saveDiaryBtn').style.display = 'none';
+                document.getElementById('cancelEditBtn').style.display = 'none';
+            }
+            
+            // 打开日历
+            openCalendar() {
+                this.renderCalendar();
+                document.getElementById('calendarModal').style.display = 'flex';
+            }
+            
+            // 关闭日历
+            closeCalendar() {
+                document.getElementById('calendarModal').style.display = 'none';
+            }
+            
+            // 渲染日历
+            async renderCalendar() {
+                const calendarEl = document.getElementById('calendar');
+                const currentYear = this.currentDate.getFullYear();
+                const currentMonth = this.currentDate.getMonth();
+                
+                // 创建日历标题
+                const calendarHeader = document.createElement('div');
+                calendarHeader.className = 'calendar-header';
+                calendarHeader.innerHTML = `
+                    <button class="date-btn" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                    <div class="calendar-month">${currentYear}年${currentMonth + 1}月</div>
+                    <button class="date-btn" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                `;
+                
+                // 创建日历网格
+                const calendarGrid = document.createElement('div');
+                calendarGrid.className = 'calendar-grid';
+                
+                // 添加星期标题
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                weekdays.forEach(day => {
+                    const dayEl = document.createElement('div');
+                    dayEl.className = 'calendar-day';
+                    dayEl.textContent = day;
+                    calendarGrid.appendChild(dayEl);
+                });
+                
+                // 获取当月第一天和最后一天
+                const firstDay = new Date(currentYear, currentMonth, 1);
+                const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                
+                // 计算第一天是星期几（0是星期日）
+                const firstDayOfWeek = firstDay.getDay();
+                
+                // 添加空白格子（上个月的日期）
+                for (let i = 0; i < firstDayOfWeek; i++) {
+                    const emptyEl = document.createElement('div');
+                    emptyEl.className = 'calendar-date';
+                    calendarGrid.appendChild(emptyEl);
+                }
+                
+                // 添加当月日期
+                for (let i = 1; i <= lastDay.getDate(); i++) {
+                    const dateEl = document.createElement('div');
+                    dateEl.className = 'calendar-date';
+                    dateEl.textContent = i;
+                    
+                    // 检查这一天是否有数据
+                    const date = new Date(currentYear, currentMonth, i);
+                    const dateKey = this.formatDate(date);
+                    const dateData = await this.loadData(date);
+                    
+                    if (dateData.girl.length > 0 || dateData.boy.length > 0 || dateData.diary) {
+                        dateEl.classList.add('has-data');
+                    }
+                    
+                    // 如果是当前选中的日期，添加active类
+                    if (this.formatDate(date) === this.formatDate(this.currentDate)) {
+                        dateEl.classList.add('active');
+                    }
+                    
+                    // 添加点击事件
+                    dateEl.addEventListener('click', async () => {
+                        this.currentDate = date;
+                        await this.render();
+                        this.closeCalendar();
+                    });
+                    
+                    calendarGrid.appendChild(dateEl);
+                }
+                
+                // 清空日历并添加新内容
+                calendarEl.innerHTML = '';
+                calendarEl.appendChild(calendarHeader);
+                calendarEl.appendChild(calendarGrid);
+                
+                // 添加月份导航事件
+                document.getElementById('prevMonth').addEventListener('click', () => {
+                    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                    this.renderCalendar();
+                });
+                
+                document.getElementById('nextMonth').addEventListener('click', () => {
+                    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                    this.renderCalendar();
+                });
+            }
+            
+            // 渲染整个页面
+            async render() {
+                await this.renderDate();
+                await this.renderGirlDaily();
+                await this.renderBoyDaily();
+                await this.renderDiary();
+            }
+            
+            // 渲染日期
+            async renderDate() {
+                document.getElementById('currentDate').textContent = this.formatDateDisplay(this.currentDate);
+                document.getElementById('diaryDate').textContent = 
+                    `${this.formatDateDisplay(this.currentDate)} 晚上 ${this.getCurrentTime()}`;
+            }
+            
+            // 获取当前时间（模拟）
+            getCurrentTime() {
+                const hours = new Date().getHours();
+                const minutes = new Date().getMinutes();
+                return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+            }
+            
+            // 渲染女孩的日常
+            async renderGirlDaily() {
+                const container = document.getElementById('girl-daily-container');
+                const dateData = await this.getCurrentDateData();
+                
+                container.innerHTML = '';
+                
+                if (dateData.girl.length === 0) {
+                    container.innerHTML = '<div class="daily-card"><div class="card-content">今天还没有分享日常</div></div>';
+                    return;
+                }
+                
+                dateData.girl.forEach(daily => {
+                    const card = document.createElement('div');
+                    card.className = 'daily-card';
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <h3>${daily.title}</h3>
+                            <span class="card-time">${daily.time}</span>
+                        </div>
+                        <div class="card-content">
+                            ${daily.content}
+                        </div>
+                        <div class="card-author">- ${daily.author}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            // 渲染男孩的日常
+            async renderBoyDaily() {
+                const container = document.getElementById('boy-daily-container');
+                const dateData = await this.getCurrentDateData();
+                
+                container.innerHTML = '';
+                
+                if (dateData.boy.length === 0) {
+                    container.innerHTML = '<div class="daily-card"><div class="card-content">今天还没有分享日常</div></div>';
+                    return;
+                }
+                
+                dateData.boy.forEach(daily => {
+                    const card = document.createElement('div');
+                    card.className = 'daily-card';
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <h3>${daily.title}</h3>
+                            <span class="card-time">${daily.time}</span>
+                        </div>
+                        <div class="card-content">
+                            ${daily.content}
+                        </div>
+                        <div class="card-author">- ${daily.author}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            // 渲染日记
+            async renderDiary() {
+                const dateData = await this.getCurrentDateData();
+                const diaryText = document.getElementById('diaryText');
+                
+                if (dateData.diary) {
+                    // 将换行符转换为HTML段落
+                    const paragraphs = dateData.diary.split('\n').filter(p => p.trim() !== '');
+                    diaryText.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
+                } else {
+                    diaryText.innerHTML = '<p>今天还没有写日记...</p>';
+                }
+            }
+            
+            // 创建漂浮爱心效果
+            createFloatingHearts() {
+                const container = document.querySelector('.container');
+                const heartCount = 10;
+                
+                for (let i = 0; i < heartCount; i++) {
+                    const heart = document.createElement('div');
+                    heart.innerHTML = '❤';
+                    heart.classList.add('floating-heart');
+                    
+                    // 随机位置
+                    const leftPos = Math.random() * 100;
+                    const delay = Math.random() * 5;
+                    const duration = 3 + Math.random() * 4;
+                    
+                    heart.style.left = `${leftPos}%`;
+                    heart.style.bottom = '-20px';
+                    heart.style.animationDelay = `${delay}s`;
+                    heart.style.animationDuration = `${duration}s`;
+                    heart.style.fontSize = `${Math.random() * 20 + 10}px`;
+                    heart.style.opacity = Math.random() * 0.5 + 0.3;
+                    
+                    container.appendChild(heart);
+                    
+                    // 移除爱心元素
+                    setTimeout(() => {
+                        if (heart.parentNode) {
+                            heart.parentNode.removeChild(heart);
+                        }
+                    }, (delay + duration) * 1000);
+                }
+            }
+        }
+
+        // 用户认证
+        document.getElementById('loginAsGirl').addEventListener('click', () => {
+            login('girl@lovediary.com', 'girl123', '女孩');
+        });
+        
+        document.getElementById('loginAsBoy').addEventListener('click', () => {
+            login('boy@lovediary.com', 'boy123', '男孩');
+        });
+        
+        document.getElementById('logout').addEventListener('click', () => {
+            auth.signOut();
+        });
+        
+        async function login(email, password, role) {
+            try {
+                // 尝试登录
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                currentUserRole = role;
+                showApp();
+            } catch (error) {
+                // 如果用户不存在，尝试创建账户
+                if (error.code === 'auth/user-not-found') {
+                    try {
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        currentUser = userCredential.user;
+                        currentUserRole = role;
+                        showApp();
+                    } catch (createError) {
+                        console.error('创建用户失败:', createError);
+                        alert('登录失败，请重试');
+                    }
+                } else {
+                    console.error('登录失败:', error);
+                    alert('登录失败，请重试');
+                }
+            }
+        }
+        
+        function showApp() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
+            // 更新用户信息
+            document.getElementById('userName').textContent = currentUserRole;
+            document.getElementById('userAvatar').innerHTML = 
+                currentUserRole === '女孩' ? '<i class="fas fa-female"></i>' : '<i class="fas fa-male"></i>';
+            
+            // 初始化日记应用
+            window.loveDiary = new LoveDiary();
+        }
+        
+        // 监听认证状态变化
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // 用户已登录，但我们需要知道是男孩还是女孩
+                // 这里简化处理，实际应用中应该将用户角色存储在数据库中
+                if (user.email === 'girl@lovediary.com') {
+                    currentUser = user;
+                    currentUserRole = '女孩';
+                    showApp();
+                } else if (user.email === 'boy@lovediary.com') {
+                    currentUser = user;
+                    currentUserRole = '男孩';
+                    showApp();
+                } else {
+                    // 未知用户，退出登录
+                    auth.signOut();
+                }
+            } else {
+                // 用户未登录
+                document.getElementById('loginPage').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                currentUser = null;
+                currentUserRole = null;
+            }
+        });
+
+        // 初始显示登录界面
+        document.getElementById('loginPage').style.display = 'flex';
+    </script>
+</body>
+</html>
